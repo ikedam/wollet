@@ -1,34 +1,34 @@
 package main
 
 import (
-	"log"
+	"context"
+	"net/http/cgi"
 	"os"
-	"path/filepath"
 
+	"github.com/ikedam/wollet/pkg/log"
 	"github.com/ikedam/wollet/pkg/wolbolt"
 )
 
 func main() {
-	// Determine the base directory of the executable
-	execPath, err := os.Executable()
-	if err != nil {
-		log.Fatalf("Failed to get executable path: %v", err)
-	}
-	baseDir := filepath.Dir(execPath)
-
 	// Load configuration
-	configFile := filepath.Join(baseDir, "wolbolt.yaml")
+	configFile := "wolbolt.yaml"
 	if len(os.Args) > 1 {
 		configFile = os.Args[1]
 	}
 
+	ctx := context.Background()
+
 	config, err := wolbolt.LoadConfig(configFile)
 	if err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
+		log.Error(ctx, "Failed to load configuration", log.WithError(err))
+		os.Exit(1)
 	}
 
 	// Run the main logic
-	if err := wolbolt.Run(config); err != nil {
-		log.Fatalf("Application error: %v", err)
+	s := wolbolt.NewServerForCGI(config)
+	if err := cgi.Serve(s); err != nil {
+		log.Error(ctx, "Application error", log.WithError(err))
+		os.Exit(1)
 	}
+	os.Exit(0)
 }

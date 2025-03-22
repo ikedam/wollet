@@ -1,7 +1,6 @@
 package wolbolt
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"net"
@@ -30,7 +29,9 @@ func LoadConfig(filePath string) (*Config, error) {
 		return nil, fmt.Errorf("failed to get executable path: %w", err)
 	}
 	baseDir := filepath.Dir(execPath)
-	filePath = filepath.Join(baseDir, filePath)
+	if !filepath.IsAbs(filePath) {
+		filePath = filepath.Join(baseDir, filePath)
+	}
 
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -49,24 +50,35 @@ func LoadConfig(filePath string) (*Config, error) {
 	}
 
 	if config.PingFile == "" {
-		config.PingFile = filepath.Join(baseDir, "ping.txt")
+		config.PingFile = "ping.txt"
+	}
+	if !filepath.IsAbs(config.PingFile) {
+		config.PingFile = filepath.Join(baseDir, config.PingFile)
 	}
 	if config.LogFile == "" {
-		config.LogFile = filepath.Join(baseDir, "ping.log")
+		config.LogFile = "ping.log"
+	}
+	if !filepath.IsAbs(config.LogFile) {
+		config.LogFile = filepath.Join(baseDir, config.LogFile)
 	}
 
 	return &config, nil
 }
 
-func Run(config *Config) error {
-	log.Info(context.Background(), "Starting WOLbolt")
+type Server struct {
+	mux *http.ServeMux
+}
 
-	http.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.NotFound(w, r)
-			return
-		}
+func NewServerForCGI(config *Config) *Server {
+	return newServer(
+		os.Getenv("SCRIPT_NAME"),
+		config,
+	)
+}
 
+func newServer(prefix string, config *Config) *Server {
+	mux := http.NewServeMux()
+	mux.HandleFunc(fmt.Sprintf("POST %v/ping", prefix), func(w http.ResponseWriter, r *http.Request) {
 		// Parse the secret from the request body
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -75,48 +87,45 @@ func Run(config *Config) error {
 			return
 		}
 		defer r.Body.Close()
-
-		if string(body) != config.Secret {
+		bodyStr := string(body)
+		bodyStr = strings.TrimRight(bodyStr, "\n")
+		if bodyStr != config.Secret {
 			log.Warn(r.Context(), "Invalid secret", log.String("remote_addr", r.RemoteAddr))
+			recordBadRequest(r.Context(), config.LogFile, getRemoteAddr(r))
 			w.Write([]byte("OK"))
 			return
 		}
 
+		// Read current config
+		currentPingResult, err := ReadPingResult(r.Context(), config.PingFile)
+		if err != nil {
+			log.Error(r.Context(), "Failed to read ping file: ignored", log.WithError(err))
+		}
+
 		// Record the IP address and timestamp
-		ip := r.RemoteAddr
-		timestamp := time.Now().UTC().Format(time.RFC3339)
-		tempFile := config.PingFile + ".tmp"
-		file, err := os.Create(tempFile)
+		pingResult := &PingResult{
+			IP:         getRemoteAddr(r),
+			UpdateTime: time.Now().UTC(),
+		}
+		err = pingResult.WriteTo(r.Context(), config.PingFile)
 		if err != nil {
-			log.Error(r.Context(), "Failed to create temp file", log.WithError(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		defer file.Close()
-
-		_, err = file.WriteString(ip + "\n" + timestamp + "\n")
-		if err != nil {
-			log.Error(r.Context(), "Failed to write to temp file", log.WithError(err))
+			log.Error(r.Context(), "Failed to write ping result", log.WithError(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		if err := os.Rename(tempFile, config.PingFile); err != nil {
-			log.Error(r.Context(), "Failed to rename temp file", log.WithError(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+		if currentPingResult == nil || currentPingResult.IP != pingResult.IP {
+			recordPingResult(
+				r.Context(),
+				config.LogFile,
+				currentPingResult,
+				pingResult,
+			)
 		}
-
-		log.Info(r.Context(), "Ping recorded", log.String("ip", ip), log.String("timestamp", timestamp))
 		w.Write([]byte("OK"))
 	})
 
-	http.HandleFunc("/wol", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.NotFound(w, r)
-			return
-		}
-
+	mux.HandleFunc(fmt.Sprintf("POST %v/wol", prefix), func(w http.ResponseWriter, r *http.Request) {
 		// Read the recorded IP address from the ping file
 		data, err := os.ReadFile(config.PingFile)
 		if err != nil {
@@ -159,14 +168,34 @@ func Run(config *Config) error {
 		w.Write([]byte("OK"))
 	})
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
-			http.NotFound(w, r)
-			return
-		}
-
+	mux.HandleFunc(fmt.Sprintf("POST %v/{$}", prefix), func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK"))
 	})
 
-	return http.ListenAndServe(":8080", nil)
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	})
+
+	return &Server{
+		mux: mux,
+	}
+}
+
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := log.CtxWithLogger(
+		r.Context(),
+		log.LoggerString(
+			"uri",
+			getPath(r),
+		),
+		log.LoggerString(
+			"method",
+			r.Method,
+		),
+		log.LoggerString(
+			"remote_addr",
+			getRemoteAddr(r),
+		),
+	)
+	s.mux.ServeHTTP(w, r.WithContext(ctx))
 }

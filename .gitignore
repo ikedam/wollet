@@ -6,3 +6,4 @@
 *.txt
 *.log
 !/docker-compose.yaml
+!/docker/apache/wolbolt.yaml
