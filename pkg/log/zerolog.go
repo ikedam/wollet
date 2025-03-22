@@ -52,3 +52,33 @@ func Info(ctx context.Context, msg string, fields ...LogField) {
 func Infof(ctx context.Context, format string, args ...interface{}) {
 	logf(ctx, zerolog.InfoLevel, format, args...)
 }
+
+// Debug outputs debug logs
+func Debug(ctx context.Context, msg string, fields ...LogField) {
+	log(ctx, zerolog.DebugLevel, msg, fields...)
+}
+
+// Debugf outputs debug logs with formatting
+func Debugf(ctx context.Context, format string, args ...interface{}) {
+	logf(ctx, zerolog.DebugLevel, format, args...)
+}
+
+// Warn outputs warning logs
+func Warn(ctx context.Context, msg string, fields ...LogField) {
+	log(ctx, zerolog.WarnLevel, msg, fields...)
+}
+
+// Warnf outputs warning logs with formatting
+func Warnf(ctx context.Context, format string, args ...interface{}) {
+	logf(ctx, zerolog.WarnLevel, format, args...)
+}
+
+// Error outputs error logs
+func Error(ctx context.Context, msg string, fields ...LogField) {
+	log(ctx, zerolog.ErrorLevel, msg, fields...)
+}
+
+// Errorf outputs error logs with formatting
+func Errorf(ctx context.Context, format string, args ...interface{}) {
+	logf(ctx, zerolog.ErrorLevel, format, args...)
+}
