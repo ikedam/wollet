@@ -4,6 +4,10 @@ AuthName "Restricted Access"
 AuthUserFile /path/to/.htpasswd
 Require valid-user
 
-<FilesMatch "\.(yaml|log|txt|ht.*)$">
+<FilesMatch "\.(yaml|log|txt)$">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "^\.ht.*$">
     Require all denied
 </FilesMatch>

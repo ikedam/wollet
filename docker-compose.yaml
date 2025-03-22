@@ -1,23 +1,35 @@
 services:
   wolbolt:
-    image: golang:1.20
-    working_dir: /app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    develop:
+      watch:
+        - action: rebuild
+          path: ./cmd/wolbolt-cgi
+        - action: rebuild
+          path: ./pkg
+        - action: rebuild
+          path: ./go.mod
+        - action: rebuild
+          path: ./go.sum
+        - action: rebuild
+          path: ./docker/apache/wollet.conf
+        - action: rebuild
+          path: ./Dockerfile
     volumes:
-      - .:/app
+      - ./public:/usr/local/apache2/htdocs/wollet
     ports:
-      - "8080:8080"
-    environment:
-      - CONFIG_FILE=wolbolt.yaml
-    command:
-      - go
-      - run
-      - cmd/wolbolt-cgi/main.go
+      - 8080:80
 
   build-wolbolt-cgi:
-    image: golang:1.20
-    working_dir: /app
+    profiles:
+      - build
+    network_mode: bridge
+    image: golang:1.23.7-bookworm
+    working_dir: /workspace
     volumes:
-      - .:/app
+      - .:/workspace
     environment:
       - GOOS=freebsd
       - GOARCH=amd64
@@ -27,14 +39,15 @@ services:
       - -o
       - public/wolbolt.cgi
       - cmd/wolbolt-cgi/main.go
-    profiles:
-      - build
 
   build-wolnut:
-    image: golang:1.20
-    working_dir: /app
+    profiles:
+      - build
+    network_mode: bridge
+    image: golang:1.23.7-bookworm
+    working_dir: /workspace
     volumes:
-      - .:/app
+      - .:/workspace
     environment:
       - GOARCH=mipsle
       - GOMIPS=softfloat
@@ -45,15 +58,14 @@ services:
       - -o
       - wolnut
       - cmd/wolnut/main.go
-    profiles:
-      - build
 
   htpasswd:
-    image: httpd:2.4
-    working_dir: /app/public
-    volumes:
-      - ./public:/app/public
-    entrypoint:
-      - htpasswd
     profiles:
       - tools
+    network_mode: bridge
+    image: httpd:2.4.63-bookworm
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    entrypoint:
+      - htpasswd

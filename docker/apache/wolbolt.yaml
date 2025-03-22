@@ -1,0 +1,6 @@
+secret: sesame
+port: 2304
+count: 3
+interval_secs: 0.1
+pingfile: /usr/local/apache2/htdocs/wollet/ping.txt
+logfile: /usr/local/apache2/htdocs/wollet/ping.log
