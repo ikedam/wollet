@@ -2,8 +2,9 @@ package wolbolt
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
+	"os"
 
 	"github.com/ikedam/wollet/pkg/log"
 	"gopkg.in/yaml.v2"
@@ -19,7 +20,13 @@ type Config struct {
 }
 
 func LoadConfig(filePath string) (*Config, error) {
-	data, err := ioutil.ReadFile(filePath)
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	data, err := io.ReadAll(file)
 	if err != nil {
 		return nil, err
 	}
