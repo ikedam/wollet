@@ -1,0 +1,8 @@
+AuthType Basic
+AuthName "Restricted Access"
+AuthUserFile .htpasswd
+Require valid-user
+
+<FilesMatch "\.(yaml|log|txt|ht.*)$">
+    Require all denied
+</FilesMatch>
