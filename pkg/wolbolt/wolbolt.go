@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -24,6 +25,13 @@ type Config struct {
 }
 
 func LoadConfig(filePath string) (*Config, error) {
+	execPath, err := os.Executable()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get executable path: %w", err)
+	}
+	baseDir := filepath.Dir(execPath)
+	filePath = filepath.Join(baseDir, filePath)
+
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -41,10 +49,10 @@ func LoadConfig(filePath string) (*Config, error) {
 	}
 
 	if config.PingFile == "" {
-		config.PingFile = "ping.txt"
+		config.PingFile = filepath.Join(baseDir, "ping.txt")
 	}
 	if config.LogFile == "" {
-		config.LogFile = "ping.log"
+		config.LogFile = filepath.Join(baseDir, "ping.log")
 	}
 
 	return &config, nil
