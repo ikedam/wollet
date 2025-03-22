@@ -1,7 +1,7 @@
 * このシステムは WOLlet (wollet) という名前で、Web 経由で LAN 内のデバイスに Wake On LAN のマジックパケットを投げるための golang 実装のシステムです。
 * WOLlet は 2 つのコンポーネントから構成されます:
-    * WOLbolt: グローバル IP の記録と、グローバルIPに対してUDPパケットを送るためのCGI。
-    * WOLnut: UDPパケットを受けて特定の MAC アドレスに対して Wake On LAN のマジックパケットを送信する。また、定期的に WOLbot にアクセスしてグローバル IP を記録させる。
+    * WOLbolt: グローバル IP の記録と、グローバルIPに対して UDP パケットを送るための CGI。
+    * WOLnut: UDP パケットを受けて特定の MAC アドレスに対して Wake On LAN のマジックパケットを送信する。また、定期的に WOLbot にアクセスしてグローバル IP を記録させる。
 * WOLbolt / WOLnut 共通の仕様
     * ログ出力には `pkg/log` モジュールを使用する。
         * 初期の実装では `Info()` のみが提供されていますが、 `Debug()`, `Warn()`, `Error()` も追加してください。
@@ -22,11 +22,11 @@
         * POST /ping
             * リクエストボディとして `secret` を受け付ける。
             * `secret` が一致する場合、以下の処理を行い、レスポンスボディとして固定の文字列「OK」を返す。
-                * `pingfile` に、1行目にアクセス元の IP アドレス、2行目にアクセスされた時刻を UTC で記録する。
-                    * ファイルの更新はプロセスIDを使用した一時ファイルに出力して出力が完了したらファイルの置き換えを行う手順で実施する。
+                * `pingfile` に、1 行目にアクセス元の IP アドレス、2 行目にアクセスされた時刻を UTC で記録する。
+                    * ファイルの更新はプロセス ID を使用した一時ファイルに出力して出力が完了したらファイルの置き換えを行う手順で実施する。
             * `secret` が一致しない場合、なんの処理も行わずにレスポンスボディとして固定の文字列「OK」を返す。
             * 以下の場合に `logfile` に動作ログとして時刻、アクセス元のIPアドレス、メッセージを出力する:
-                * `secret` が一致しない場合
+                * `secret` が一致しない場合。
                 * `pingfile` に記録されている IP アドレスが変化した場合。元の IP アドレスと新しい IP アドレスを記録する。
         * POST /wol
             * `pingfile` に記録されている IP アドレス、`port` で指定された UDP ポートに対して、 `secret` を本文とする UDP パケットを送り、固定の文字列「OK」を返す。
@@ -78,4 +78,3 @@
     * `docker compose run --rm build-wolnut` で `wolnut` をビルドする。
         * ビルドオプションとして `GOARCH=mipsle`、 `GOMIPS=softfloat`、 `-ldflags="-s -w"` を指定する。
     * `docker compose run --rm htpasswd` で `public/.htpasswd` を作成/更新できるようにする。
-
