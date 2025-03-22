@@ -1,6 +1,7 @@
 AuthType Basic
 AuthName "Restricted Access"
-AuthUserFile .htpasswd
+# 絶対パスで指定する必要がある
+AuthUserFile /path/to/.htpasswd
 Require valid-user
 
 <FilesMatch "\.(yaml|log|txt|ht.*)$">
