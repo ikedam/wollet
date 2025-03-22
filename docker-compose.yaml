@@ -1,0 +1,59 @@
+services:
+  wolbolt:
+    image: golang:1.20
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "8080:8080"
+    environment:
+      - CONFIG_FILE=wolbolt.yaml
+    command:
+      - go
+      - run
+      - cmd/wolbolt-cgi/main.go
+
+  build-wolbolt-cgi:
+    image: golang:1.20
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      - GOOS=freebsd
+      - GOARCH=amd64
+    command:
+      - go
+      - build
+      - -o
+      - public/wolbolt.cgi
+      - cmd/wolbolt-cgi/main.go
+    profiles:
+      - build
+
+  build-wolnut:
+    image: golang:1.20
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      - GOARCH=mipsle
+      - GOMIPS=softfloat
+    command:
+      - go
+      - build
+      - -ldflags=-s -w
+      - -o
+      - wolnut
+      - cmd/wolnut/main.go
+    profiles:
+      - build
+
+  htpasswd:
+    image: httpd:2.4
+    working_dir: /app/public
+    volumes:
+      - ./public:/app/public
+    entrypoint:
+      - htpasswd
+    profiles:
+      - tools

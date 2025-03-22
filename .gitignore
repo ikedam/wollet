@@ -3,3 +3,4 @@
 *.yaml
 *.txt
 *.log
+!/docker-compose.yaml
