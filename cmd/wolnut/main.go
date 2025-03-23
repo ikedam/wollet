@@ -1,34 +1,31 @@
 package main
 
 import (
-	"log"
+	"context"
 	"os"
-	"path/filepath"
 
+	"github.com/ikedam/wollet/pkg/log"
 	"github.com/ikedam/wollet/pkg/wolnut"
 )
 
 func main() {
-	// Determine the base directory of the executable
-	execPath, err := os.Executable()
-	if err != nil {
-		log.Fatalf("Failed to get executable path: %v", err)
-	}
-	baseDir := filepath.Dir(execPath)
+	ctx := context.Background()
 
 	// Load configuration
-	configFile := filepath.Join(baseDir, "wolnut.yaml")
+	configFile := "wolnut.yaml"
 	if len(os.Args) > 1 {
 		configFile = os.Args[1]
 	}
 
 	config, err := wolnut.LoadConfig(configFile)
 	if err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
+		log.Error(ctx, "Failed to load configuration", log.WithError(err))
+		os.Exit(1)
 	}
 
 	// Run the main logic
-	if err := wolnut.Run(config); err != nil {
-		log.Fatalf("Application error: %v", err)
+	if err := wolnut.Run(ctx, config); err != nil {
+		log.Error(ctx, "Application error", log.WithError(err))
+		os.Exit(1)
 	}
 }

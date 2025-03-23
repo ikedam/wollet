@@ -1,0 +1,16 @@
+# wolbolt - wolnut 間の通信用のパスワードを設定します (BASIC 認証とは独立)
+secret: sesame
+# 起動対象のデバイスの MAC アドレス
+target: 00:00:00:00:00:00
+# 起動対象のデバイスとの通信に使うネットワークインタフェース
+iface: eth0
+# 待受 UDP ポート
+port: 2304
+ping:
+    # wolbolt の ping の URL
+    url: https://example.com/wolnut/wolbolt.cgi/ping
+    # 通知の間隔 (秒)
+    interval_secs: 3600
+    # BASIC 認証の認証情報
+    basic_user: username
+    basic_pass: password

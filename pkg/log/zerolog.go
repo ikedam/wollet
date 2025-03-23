@@ -32,7 +32,6 @@ func log(ctx context.Context, level zerolog.Level, msg string, fields ...LogFiel
 	for _, f := range fields {
 		e = f(e)
 	}
-	e.Send()
 	e.Msg(msg)
 }
 
