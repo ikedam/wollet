@@ -1,0 +1,10 @@
+# wolbolt - wolnut 間の通信用のパスワードを設定します (BASIC 認証とは独立)
+secret: sesame
+# wolnut 側の待受 UDP ポート
+port: 2304
+# パケットがロストすることを想定した送信回数と送信間隔
+count: 3
+interval_secs: 0.1
+# ping の保存ファイルとログファイルの場所。基本的に変えなくて良い。
+# pingfile: ping.txt
+# logfile: ping.log
