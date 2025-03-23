@@ -144,7 +144,13 @@ func newServer(prefix string, config *Config) *Server {
 		ip := lines[0]
 
 		// Send UDP packets to the recorded IP address
-		addr := fmt.Sprintf("%s:%d", ip, config.Port)
+		var addr string
+		if strings.Contains(ip, ":") {
+			// IPv6 address
+			addr = fmt.Sprintf("[%s]:%d", ip, config.Port)
+		} else {
+			addr = fmt.Sprintf("%s:%d", ip, config.Port)
+		}
 		conn, err := net.Dial("udp", addr)
 		if err != nil {
 			log.Error(r.Context(), "Failed to dial UDP", log.WithError(err))
