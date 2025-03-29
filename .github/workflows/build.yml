@@ -25,4 +25,4 @@ jobs:
       - name: Check Binaries
         run: |
           ls -l ./public/wolbolt.cgi
-          ls -l ./wolnut
+          ls -l ./wolnut/wolnut

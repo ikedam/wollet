@@ -57,7 +57,7 @@ services:
       - build
       - -ldflags=-s -w
       - -o
-      - wolnut
+      - wolnut/wolnut
       - cmd/wolnut/main.go
 
   htpasswd:

@@ -1,7 +1,7 @@
 /public/.htaccess
 /public/.htpasswd
 /public/wolbolt.cgi
-/wolnut
+/wolnut/wolnut
 *.yaml
 *.txt
 *.log
