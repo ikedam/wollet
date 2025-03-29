@@ -31,8 +31,8 @@ services:
     volumes:
       - .:/workspace
     environment:
-      - GOOS=freebsd
-      - GOARCH=amd64
+      - GOOS=${GOOS:-freebsd}
+      - GOARCH=${GOARCH:-amd64}
     command:
       - go
       - build
@@ -49,8 +49,9 @@ services:
     volumes:
       - .:/workspace
     environment:
-      - GOARCH=mipsle
-      - GOMIPS=softfloat
+      - GOOS=${GOOS:-linux}
+      - GOARCH=${GOARCH:-mipsle}
+      - GOMIPS=${GOMIPS:-softfloat}
     command:
       - go
       - build

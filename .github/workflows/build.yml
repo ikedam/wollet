@@ -1,0 +1,28 @@
+name: Build Binaries (as testing)
+
+on:
+  push:
+    branches:
+      - "**"
+
+jobs:
+  release:
+    name: Build Binaries
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Build wolbolt-cgi binary for FreeBSD/amd64
+        run: |
+          GOOS=freebsd GOARCH=amd64 docker compose run --rm build-wolbolt-cgi
+
+      - name: Build wolnut binary for MIPSLE with softfloat
+        run: |
+          GOOS=linux GOARCH=mipsle GOMIPS=softfloat docker compose run --rm build-wolnut
+
+      - name: Check Binaries
+        run: |
+          ls -l ./public/wolbolt.cgi
+          ls -l ./wolnut
