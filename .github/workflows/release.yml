@@ -9,6 +9,8 @@ jobs:
   release:
     name: Release Binaries
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: checkout
