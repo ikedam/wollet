@@ -30,6 +30,8 @@ jobs:
           release_name: ${{ github.ref_name }}
           draft: false
           prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload wolbolt-cgi binary
         uses: actions/upload-release-asset@v1
@@ -38,7 +40,9 @@ jobs:
           asset_path: ./public/wolbolt.cgi
           asset_name: wolbolt-cgi-freebsd-amd64
           asset_content_type: application/octet-stream
-
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
       - name: Upload wolnut binary
         uses: actions/upload-release-asset@v1
         with:
@@ -46,3 +50,6 @@ jobs:
           asset_path: ./wolnut
           asset_name: wolnut-linux-mipsle-softfloat
           asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
