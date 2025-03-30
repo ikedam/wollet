@@ -1,7 +1,7 @@
 #!/bin/sh
 
 set -e
-: ${VERSION:=v1.0.2}
+: ${VERSION:=v1.1.0}
 : ${WORKDIR:=/tmp/wolnut}
 : ${REPEAT:=10}
 : ${SLEEP:=10}

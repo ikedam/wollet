@@ -3,6 +3,7 @@ package wolnut
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -107,7 +108,8 @@ func Run(ctx context.Context, config *Config) error {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGINT)
 	go func() {
-		<-signalChan
+		s := <-signalChan
+		log.Info(ctx, "Received signal...Terminate", log.String("signal", s.String()))
 		cancel()
 		conn.Close()
 	}()
@@ -120,7 +122,7 @@ func Run(ctx context.Context, config *Config) error {
 			interval := time.Duration(config.Ping.IntervalSecs * float64(time.Second))
 			err := doPing(ctx, config)
 			if err != nil {
-				if err == context.Canceled {
+				if errors.Is(err, context.Canceled) {
 					log.Info(ctx, "Stopping pinging")
 					return
 				}
@@ -154,10 +156,11 @@ func Run(ctx context.Context, config *Config) error {
 			default:
 				n, addr, err := conn.ReadFrom(buf)
 				if err != nil {
-					log.Warn(ctx, "Error reading UDP packet", log.WithError(err))
-					if err == net.ErrClosed {
+					if errors.Is(err, net.ErrClosed) {
+						log.Info(ctx, "UDP port colosed")
 						return
 					}
+					log.Warn(ctx, "Error reading UDP packet", log.WithError(err))
 					continue
 				}
 
