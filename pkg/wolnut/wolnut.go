@@ -132,6 +132,7 @@ func Run(ctx context.Context, config *Config) error {
 					log.WithError(err),
 					log.Float64("interval", config.Ping.RetryIntervalSecs),
 				)
+				interval = time.Duration(config.Ping.RetryIntervalSecs * float64(time.Second))
 			}
 
 			select {
