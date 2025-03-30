@@ -11,6 +11,10 @@ ping:
     url: https://example.com/wolnut/wolbolt.cgi/ping
     # 通知の間隔 (秒)
     interval_secs: 3600
+    # 通知失敗時のリトライの間隔 (秒)
+    retry_interval_secs: 300
     # BASIC 認証の認証情報
     basic_user: username
     basic_pass: password
+    # プロトコルの指定
+    # protocol: tcp6

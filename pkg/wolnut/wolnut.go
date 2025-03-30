@@ -19,17 +19,21 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type PingConfig struct {
+	URL               string  `yaml:"url"`
+	IntervalSecs      float64 `yaml:"interval_secs"`
+	RetryIntervalSecs float64 `yaml:"retry_interval_secs"`
+	BasicUser         string  `yaml:"basic_user"`
+	BasicPass         string  `yaml:"basic_pass"`
+	Protocol          string  `yaml:"protocol"`
+}
+
 type Config struct {
-	Secret string `yaml:"secret"`
-	Target string `yaml:"target"`
-	Iface  string `yaml:"iface"`
-	Port   int    `yaml:"port"`
-	Ping   struct {
-		URL          string  `yaml:"url"`
-		IntervalSecs float64 `yaml:"interval_secs"`
-		BasicUser    string  `yaml:"basic_user"`
-		BasicPass    string  `yaml:"basic_pass"`
-	} `yaml:"ping"`
+	Secret string     `yaml:"secret"`
+	Target string     `yaml:"target"`
+	Iface  string     `yaml:"iface"`
+	Port   int        `yaml:"port"`
+	Ping   PingConfig `yaml:"ping"`
 }
 
 func LoadConfig(filePath string) (*Config, error) {
@@ -53,7 +57,13 @@ func LoadConfig(filePath string) (*Config, error) {
 		return nil, err
 	}
 
-	var config Config
+	// デフォルト値の設定
+	config := Config{
+		Ping: PingConfig{
+			IntervalSecs:      3600,
+			RetryIntervalSecs: 300,
+		},
+	}
 	if err := yaml.Unmarshal(data, &config); err != nil {
 		return nil, err
 	}
@@ -107,20 +117,26 @@ func Run(ctx context.Context, config *Config) error {
 	go func() {
 		defer wg.Done()
 		for {
+			interval := time.Duration(config.Ping.IntervalSecs * float64(time.Second))
 			err := doPing(ctx, config)
 			if err != nil {
 				if err == context.Canceled {
 					log.Info(ctx, "Stopping pinging")
 					return
 				}
-				log.Error(ctx, "Failed to ping...continue", log.WithError(err))
+				log.Error(
+					ctx,
+					"Failed to ping...retry in shorter interval",
+					log.WithError(err),
+					log.Float64("interval", config.Ping.RetryIntervalSecs),
+				)
 			}
 
 			select {
 			case <-ctx.Done():
 				log.Info(ctx, "Stopping pinging")
 				return
-			case <-time.After(time.Duration(config.Ping.IntervalSecs * float64(time.Second))):
+			case <-time.After(interval):
 				continue
 			}
 		}
@@ -174,7 +190,17 @@ func doPing(ctx context.Context, config *Config) error {
 	if config.Ping.BasicUser != "" && config.Ping.BasicPass != "" {
 		req.SetBasicAuth(config.Ping.BasicUser, config.Ping.BasicPass)
 	}
-	resp, err := http.DefaultClient.Do(req)
+	client := *http.DefaultClient
+	if config.Ping.Protocol != "" {
+		transport := http.DefaultTransport.(*http.Transport).Clone()
+		origDialContext := transport.DialContext
+		transport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+			return origDialContext(ctx, config.Ping.Protocol, addr)
+		}
+		client.Transport = transport
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to send request: %w", err)
 	}
