@@ -1,6 +1,6 @@
 module github.com/ikedam/wollet
 
-go 1.23.4
+go 1.19
 
 require (
 	github.com/rs/zerolog v1.34.0

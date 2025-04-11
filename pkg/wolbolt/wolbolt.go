@@ -78,7 +78,15 @@ func NewServerForCGI(config *Config) *Server {
 
 func newServer(prefix string, config *Config) *Server {
 	mux := http.NewServeMux()
-	mux.HandleFunc(fmt.Sprintf("POST %v/ping", prefix), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("%v/ping", prefix), func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != fmt.Sprintf("%v/ping", prefix) {
+			http.NotFound(w, r)
+			return
+		}
+		if r.Method != http.MethodPost {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
 		// Parse the secret from the request body
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -125,7 +133,15 @@ func newServer(prefix string, config *Config) *Server {
 		w.Write([]byte("OK"))
 	})
 
-	mux.HandleFunc(fmt.Sprintf("POST %v/wol", prefix), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("%v/wol", prefix), func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != fmt.Sprintf("%v/wol", prefix) {
+			http.NotFound(w, r)
+			return
+		}
+		if r.Method != http.MethodPost {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
 		// Read the recorded IP address from the ping file
 		data, err := os.ReadFile(config.PingFile)
 		if err != nil {
@@ -174,7 +190,11 @@ func newServer(prefix string, config *Config) *Server {
 		w.Write([]byte("OK"))
 	})
 
-	mux.HandleFunc(fmt.Sprintf("POST %v/{$}", prefix), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("%v/", prefix), func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != fmt.Sprintf("%v/", prefix) {
+			http.NotFound(w, r)
+			return
+		}
 		w.Write([]byte("OK"))
 	})
 
